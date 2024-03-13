@@ -10,6 +10,9 @@ def getExtension(filename):
     return os.path.splitext(filename)[1]
 
 def main():
+    if params.as_internal_mask:
+        gdal.SetConfigOption('GDAL_TIFF_INTERNAL_MASK', 'YES')
+
     for subdir, dirs, files in os.walk(params.input_folder):
         for file in files:
             filepath = subdir + os.sep + file
@@ -36,7 +39,14 @@ def main():
 
                 # Crear un nuevo archivo GeoTIFF con la máscara
                 driver = gdal.GetDriverByName('GTiff')
-                masked_dataset = driver.Create(output_file, dataset.RasterXSize, dataset.RasterYSize, 4, gdal.GDT_Byte, options=['COMPRESS=DEFLATE'])
+                masked_dataset = driver.Create(
+                    output_file,
+                    dataset.RasterXSize, 
+                    dataset.RasterYSize, 
+                    3 if params.as_internal_mask else 4, 
+                    gdal.GDT_Byte, 
+                    options=['COMPRESS=DEFLATE']
+                )
                 masked_dataset.SetGeoTransform(dataset.GetGeoTransform())
                 masked_dataset.SetProjection(dataset.GetProjection())
 
@@ -44,7 +54,15 @@ def main():
                 masked_dataset.GetRasterBand(1).WriteArray(red_band)
                 masked_dataset.GetRasterBand(2).WriteArray(green_band)
                 masked_dataset.GetRasterBand(3).WriteArray(blue_band)
-                masked_dataset.GetRasterBand(4).WriteArray(alpha_band)
+
+                if params.as_internal_mask:
+                    #https://gdal.org/development/rfc/rfc15_nodatabitmask.html#default-createmaskband
+                    masked_dataset.CreateMaskBand(gdal.GMF_PER_DATASET)
+                    for iBand in range(1, 4):
+                        inband = masked_dataset.GetRasterBand(iBand)
+                        inband.GetMaskBand().WriteArray(alpha_band)
+                else:
+                    masked_dataset.GetRasterBand(4).WriteArray(alpha_band)
 
                 dataset = None
                 masked_dataset = None
