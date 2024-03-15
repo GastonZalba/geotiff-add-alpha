@@ -1,6 +1,10 @@
 # add-alpha
 
-Script en Python para procesar GeoTiffs RGB y agregarles canal alpha a partir de un valor noData en específico. 
+Script en Python para procesar GeoTiffs de tres bandas (RGB) y agregarles transparencia, ya sea como canal alpha en una cuarta banda (RGBA) o como máscara interna, a partir de un valor nodata arbitrario. También permite modificar el valor del pixel con nodata original por otro, pudiendo convertir un fondo blanco en uno negro, por ejemplo.
+
+Para mejores resultados del procesameinto se requiere que las imágenes de origen no estén comprimidas con pérdida, sino con algún formato lossless (DEFLATE y no JPEG, por ejemplo), de otro modo la generación de la transparencia presentará ruido y no estará bien definida.
+
+La búsqueda de los GeoTiffs es recursiva, por lo que puede usarse como origen una carpeta que dentro tenga más carpetas (como las generadas por `gdal_retile.py` al tener el render piramidal activado, por ejemplo). En estos casos se recomienda no especificar `output_folder` para exportar los archivos junto a los de origen.
 
 ## Instalación
 
